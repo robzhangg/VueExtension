@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Vue Seat Checker",
+  "version": "1.0",
+  "description": "Shows seat availability per showtime on Vue film pages",
+  "permissions": [],
+  "host_permissions": ["https://www.myvue.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.myvue.com/cinema/*/film/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["inject.js"],
+      "matches": ["https://www.myvue.com/*"]
+    }
+  ]
+}
