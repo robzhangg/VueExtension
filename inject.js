@@ -35,6 +35,8 @@
             const res = await fetch(`https://www.myvue.com/api/microservice/booking/Session/${cinemaId}/${sessionId}/seats`);
             if (!res.ok) return null;
             const data = await res.json();
+            console.log(sessionId)
+            renderSeatChart(data.result.seatRows);
             return Math.round((data.result.sessionOccupancy || 0) * 100);
         } catch (e) {
             console.warn('[VueSeatChecker] seat fetch failed', sessionId, e);
@@ -51,6 +53,30 @@
         occupancyPct < 60 ? `Moderate - ${100-occupancyPct}% available` :
         `Busy - ${100-occupancyPct}% available`;
         return `${time} (${session.screenName}): ${label}`;
+    }
+    function renderSeatChart(seatRows){
+        for (const row of seatRows){
+            let line = '';
+            for (const seat of row.columns){
+                
+                if (seat === null){
+                    line+=' ';
+                }
+                else if (seat.seatStatus == 1){
+                    line+='X';
+                }
+                else if (seat.seatStatus == 0 || seat.seatStatus == 7){
+                    line+='.';
+                }
+                else if (seat.seatStatus === 3) {
+                    line += 'W'; // wheelchair space
+                } else {
+                    line += '?'; // catches 4, 8, 9, 10, 11 — anything not yet handled
+                }
+            }
+            console.log(row.rowLabel.padEnd(2), line)
+
+        }
     }
 
     async function handleShowtimesResponse(url, json) {
