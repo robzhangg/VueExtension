@@ -3,6 +3,21 @@
 
     const seenShowtimes = new Set(); // avoid double-processing the duplicate fetch firing
     let panel = null;
+    let chartBox = null;
+    const seatCharts = {};
+
+    function ensureChartBox() {
+        if (chartBox) return chartBox;
+        chartBox = document.createElement('div');
+        chartBox.style.cssText = `
+            position: fixed; top: 80px; right: 350px;
+            background: #eaeaea; padding: 10px; border-radius: 8px;
+            z-index: 999999; display: none;
+            box-shadow: inset 0 0 0 2px #404040;
+        `;
+        document.body.appendChild(chartBox);
+        return chartBox;
+    }
 
     function ensurePanel() {
         if (panel) return panel;
@@ -26,8 +41,20 @@
             row.style.cssText = 'padding:6px 0; border-top:1px solid #333;';
             row.id = `vsc-row-${session.sessionId}`;
             document.getElementById('vsc-body').appendChild(row);
+            
         }
         row.textContent = formatLabel(session, occupancyPct);
+        row.addEventListener('mouseenter', () => {
+                const chart = seatCharts[session.sessionId]
+                if (!chart) return;
+                const box = ensureChartBox();
+                box.innerHTML = '';
+                box.appendChild(chart);
+                box.style.display = 'block';
+            });
+        row.addEventListener('mouseleave', () =>{
+            chartBox.style.display = 'none';
+        });
     }
 
     async function fetchSeats(cinemaId, sessionId) {
@@ -36,7 +63,8 @@
             if (!res.ok) return null;
             const data = await res.json();
             console.log(sessionId)
-            renderSeatChart(data.result.seatRows);
+            const chart = buildSeatChart(data.result.seatRows);
+            seatCharts[sessionId] = chart;
             return Math.round((data.result.sessionOccupancy || 0) * 100);
         } catch (e) {
             console.warn('[VueSeatChecker] seat fetch failed', sessionId, e);
@@ -54,29 +82,116 @@
         `Busy - ${100-occupancyPct}% available`;
         return `${time} (${session.screenName}): ${label}`;
     }
-    function renderSeatChart(seatRows){
-        for (const row of seatRows){
-            let line = '';
-            for (const seat of row.columns){
-                
-                if (seat === null){
-                    line+=' ';
-                }
-                else if (seat.seatStatus == 1){
-                    line+='X';
-                }
-                else if (seat.seatStatus == 0 || seat.seatStatus == 7){
-                    line+='.';
-                }
-                else if (seat.seatStatus === 3) {
-                    line += 'W'; // wheelchair space
-                } else {
-                    line += '?'; // catches 4, 8, 9, 10, 11 — anything not yet handled
-                }
-            }
-            console.log(row.rowLabel.padEnd(2), line)
+    function buildSeatChart(seatRows) {
+        const chartDiv = document.createElement('div');
+        chartDiv.style.cssText = 'align-items: center; display: flex; flex-direction: column'
+        const screen = document.createElement('div');
+        screen.style.cssText = `
+        width: 100%;
+        background: transparent;
+        text-align: center;
+        color: #000000;
+        font-weight: 600;
+        `;        
+        screen.textContent = "SCREEN"
+        chartDiv.appendChild(screen)
 
+        const legend = document.createElement('div');
+        legend.style.cssText = 'display: flex; color: #000000; font-size: 70%';
+
+        const vipItem = document.createElement('div');
+        vipItem.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
+
+        const vipSwatch = document.createElement('div');
+        vipSwatch.style.cssText = 'width:14px; height:14px; border: 2px solid #D67400; background: transparent;';
+
+        const vipLabel = document.createElement('span');
+        vipLabel.textContent = 'VIP';
+
+        vipItem.appendChild(vipSwatch);
+        vipItem.appendChild(vipLabel);
+        legend.appendChild(vipItem);
+        
+        const regularItem = document.createElement('div');
+        regularItem.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
+        const regularSwatch = document.createElement('div');
+        regularSwatch.style.cssText = 'width:14px; height:14px; border: 2px solid #000000; background: transparent;';
+        const regularLabel = document.createElement('span');
+        regularLabel.textContent = 'REGULAR';
+        regularItem.appendChild(regularSwatch);
+        regularItem.appendChild(regularLabel);
+        legend.appendChild(regularItem);
+
+        const saverItem = document.createElement('div');
+        saverItem.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
+        const saverSwatch = document.createElement('div');
+        saverSwatch.style.cssText = 'width:14px; height:14px; border: 2px solid #4F9C58; background: transparent;';
+        const saverLabel = document.createElement('span');
+        saverLabel.textContent = 'SAVER';
+        saverItem.appendChild(saverSwatch);
+        saverItem.appendChild(saverLabel);
+        legend.appendChild(saverItem);
+
+        const superSaverItem = document.createElement('div');
+        superSaverItem.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
+        const superSaverSwatch = document.createElement('div');
+        superSaverSwatch.style.cssText = 'width:14px; height:14px; border: 2px solid #c81919; background: transparent;';
+        const superSaverLabel = document.createElement('span');
+        superSaverLabel.textContent = 'SUPER SAVER';
+        superSaverItem.appendChild(superSaverSwatch);
+        superSaverItem.appendChild(superSaverLabel);
+        legend.appendChild(superSaverItem);
+        
+        chartDiv.append(legend);
+
+
+        for (const row of seatRows) {
+            const rowDiv = buildRowElement(row);
+            chartDiv.appendChild(rowDiv);
         }
+        return chartDiv;
+    }
+    function buildRowElement(row) {
+        const rowDiv = document.createElement('div');
+        rowDiv.style.cssText = 'display: flex;';
+            for (const seat of row.columns) {
+    
+                const seatDiv = document.createElement('div');
+                if (seat === null){
+                    seatDiv.style.cssText = `width:14px; height:14px; background: transparent;`;  
+                }
+                else
+                {
+                    let color = 'black';
+                    switch(seat.areaCategoryCode){
+                        case '0000000011':
+                            color = '#c81919'
+                            break
+                        case '0000000017':
+                            color = '#4F9C58'
+                            break
+                        case '0000000012':
+                            color = '#000000'
+                            break
+                        case '0000000016':
+                            color = '#D67400'
+                            break
+                    }
+
+                    if (seat.seatStatus == 1){
+                        seatDiv.style.cssText = `width:14px; height:14px;border: 2px solid ${color}; background: color-mix(in srgb, ${color} 75%, white 25%);`;                }
+                    else if (seat.seatStatus == 0 || seat.seatStatus == 7){
+                        seatDiv.style.cssText = `width:14px; height:14px; border: 2px solid ${color}; background: transparent;`;  
+                    }
+                    else if (seat.seatStatus === 3) {
+                        seatDiv.style.cssText = `width:14px; height:14px; border: 2px solid #3856ff; background: transparent;`;  
+                    } else {
+                        seatDiv.style.cssText = `width:14px; height:14px; border: 2px solid #000000; background: transparent;`;  
+                    }
+                }
+                rowDiv.appendChild(seatDiv);
+        }
+        return rowDiv;
     }
 
     async function handleShowtimesResponse(url, json) {
@@ -88,6 +203,7 @@
         if (!film) return;
 
         ensurePanel();
+        ensureChartBox();
         for (const group of film.showingGroups || []) {
             for (const session of group.sessions || []) {
                 if (seenShowtimes.has(session.sessionId)) continue;
