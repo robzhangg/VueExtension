@@ -63,7 +63,7 @@
             if (!res.ok) return null;
             const data = await res.json();
             console.log(sessionId)
-            const chart = buildSeatChart(data.result.seatRows);
+            const chart = buildSeatChart(data.result.seatRows, data.result.areaCategories);
             seatCharts[sessionId] = chart;
             return Math.round((data.result.sessionOccupancy || 0) * 100);
         } catch (e) {
@@ -82,7 +82,10 @@
         `Busy - ${100-occupancyPct}% available`;
         return `${time} (${session.screenName}): ${label}`;
     }
-    function buildSeatChart(seatRows) {
+    function buildSeatChart(seatRows, areaCategories) {
+        const chartLegend = buildAreaLookup(areaCategories)
+
+
         const chartDiv = document.createElement('div');
         chartDiv.style.cssText = 'align-items: center; display: flex; flex-direction: column'
         const screen = document.createElement('div');
@@ -146,12 +149,25 @@
 
 
         for (const row of seatRows) {
-            const rowDiv = buildRowElement(row);
+            const rowDiv = buildRowElement(row, chartLegend);
             chartDiv.appendChild(rowDiv);
         }
         return chartDiv;
     }
-    function buildRowElement(row) {
+
+    function buildAreaLookup(areaCategories) {
+        const lookup = {}
+        for (const category of areaCategories) {
+            lookup[category.areaCategoryCode] = {
+                color: category.areaColor,
+                name: category.areaName
+            }
+        }
+        return lookup
+    }
+
+
+    function buildRowElement(row, areaLookup) {
         const rowDiv = document.createElement('div');
         rowDiv.style.cssText = 'display: flex;';
             for (const seat of row.columns) {
@@ -162,21 +178,8 @@
                 }
                 else
                 {
-                    let color = 'black';
-                    switch(seat.areaCategoryCode){
-                        case '0000000011':
-                            color = '#c81919'
-                            break
-                        case '0000000017':
-                            color = '#4F9C58'
-                            break
-                        case '0000000012':
-                            color = '#000000'
-                            break
-                        case '0000000016':
-                            color = '#D67400'
-                            break
-                    }
+                    const area = areaLookup[seat.areaCategoryCode]
+                    const color = area.color
 
                     if (seat.seatStatus == 1){
                         seatDiv.style.cssText = `width:14px; height:14px;border: 2px solid ${color}; background: color-mix(in srgb, ${color} 75%, white 25%);`;                }
@@ -184,7 +187,7 @@
                         seatDiv.style.cssText = `width:14px; height:14px; border: 2px solid ${color}; background: transparent;`;  
                     }
                     else if (seat.seatStatus === 3) {
-                        seatDiv.style.cssText = `width:14px; height:14px; border: 2px solid #3856ff; background: transparent;`;  
+                        seatDiv.style.cssText = `width:14px; height:14px; border: 2px solid #3a96d1; background: transparent;`;  
                     } else {
                         seatDiv.style.cssText = `width:14px; height:14px; border: 2px solid #000000; background: transparent;`;  
                     }
