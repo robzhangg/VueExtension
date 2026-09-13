@@ -83,7 +83,7 @@
         return `${time} (${session.screenName}): ${label}`;
     }
     function buildSeatChart(seatRows, areaCategories) {
-        const chartLegend = buildAreaLookup(areaCategories)
+        const chartLegend = buildAreaLookup(areaCategories);
 
 
         const chartDiv = document.createElement('div');
@@ -96,56 +96,12 @@
         color: #000000;
         font-weight: 600;
         `;        
-        screen.textContent = "SCREEN"
-        chartDiv.appendChild(screen)
+        screen.textContent = "SCREEN";
+        chartDiv.appendChild(screen);
 
-        const legend = document.createElement('div');
-        legend.style.cssText = 'display: flex; color: #000000; font-size: 70%';
+        const legend = buildLegend(areaCategories);
 
-        const vipItem = document.createElement('div');
-        vipItem.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
-
-        const vipSwatch = document.createElement('div');
-        vipSwatch.style.cssText = 'width:14px; height:14px; border: 2px solid #D67400; background: transparent;';
-
-        const vipLabel = document.createElement('span');
-        vipLabel.textContent = 'VIP';
-
-        vipItem.appendChild(vipSwatch);
-        vipItem.appendChild(vipLabel);
-        legend.appendChild(vipItem);
-        
-        const regularItem = document.createElement('div');
-        regularItem.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
-        const regularSwatch = document.createElement('div');
-        regularSwatch.style.cssText = 'width:14px; height:14px; border: 2px solid #000000; background: transparent;';
-        const regularLabel = document.createElement('span');
-        regularLabel.textContent = 'REGULAR';
-        regularItem.appendChild(regularSwatch);
-        regularItem.appendChild(regularLabel);
-        legend.appendChild(regularItem);
-
-        const saverItem = document.createElement('div');
-        saverItem.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
-        const saverSwatch = document.createElement('div');
-        saverSwatch.style.cssText = 'width:14px; height:14px; border: 2px solid #4F9C58; background: transparent;';
-        const saverLabel = document.createElement('span');
-        saverLabel.textContent = 'SAVER';
-        saverItem.appendChild(saverSwatch);
-        saverItem.appendChild(saverLabel);
-        legend.appendChild(saverItem);
-
-        const superSaverItem = document.createElement('div');
-        superSaverItem.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
-        const superSaverSwatch = document.createElement('div');
-        superSaverSwatch.style.cssText = 'width:14px; height:14px; border: 2px solid #c81919; background: transparent;';
-        const superSaverLabel = document.createElement('span');
-        superSaverLabel.textContent = 'SUPER SAVER';
-        superSaverItem.appendChild(superSaverSwatch);
-        superSaverItem.appendChild(superSaverLabel);
-        legend.appendChild(superSaverItem);
-        
-        chartDiv.append(legend);
+        chartDiv.appendChild(legend);
 
 
         for (const row of seatRows) {
@@ -164,6 +120,42 @@
             }
         }
         return lookup
+    }
+
+    function buildLegend(areaCategories) {
+        const legend = document.createElement('div');
+        legend.style.cssText = 'display: flex; color: #000000; font-size: 70%';
+
+        const item = document.createElement('div');
+        item.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
+
+        const swatch = document.createElement('div');
+        swatch.style.cssText = `width:14px; height:14px; border: 2px solid #3a96d1; background: transparent;`;
+        
+        const label = document.createElement('span');
+        label.textContent = 'DISABLED';
+
+        item.appendChild(swatch);
+        item.appendChild(label);
+        legend.appendChild(item);
+
+
+
+        for (const category of areaCategories) {
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; align-items: center; gap: 4px; margin-right: 10px;';
+
+            const swatch = document.createElement('div');
+            swatch.style.cssText = `width:14px; height:14px; border: 2px solid ${category.areaColor}; background: transparent;`;
+            
+            const label = document.createElement('span');
+            label.textContent = category.areaName.toUpperCase();
+
+            item.appendChild(swatch);
+            item.appendChild(label);
+            legend.appendChild(item);
+        }
+        return legend;
     }
 
 
