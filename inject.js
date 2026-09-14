@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    const seenShowtimes = new Set(); // avoid double-processing the duplicate fetch firing
+    const seenShowtimes = new Set(); 
     let panel = null;
     let chartBox = null;
     const seatCharts = {};
